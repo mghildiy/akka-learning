@@ -1,13 +1,15 @@
 package com.cypherlabs.akka.testing
 
 import akka.actor.{Actor, ActorSystem, Props}
-import akka.testkit.{ImplicitSender, TestKit}
+import akka.testkit.{ImplicitSender, TestKit, TestProbe}
+import com.typesafe.config.ConfigFactory
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
-import scala.concurrent.duration._
 
+import scala.concurrent.duration._
 import scala.util.Random
 
-class TimedAssertionsSpec extends TestKit(ActorSystem("TimedAssertionsSpec"))
+class TimedAssertionsSpec extends TestKit(
+  ActorSystem("TimedAssertionsSpec", ConfigFactory.load().getConfig("specialTimedAssertionsConfig")))
   with ImplicitSender
   with WordSpecLike
   with BeforeAndAfterAll
@@ -30,7 +32,8 @@ class TimedAssertionsSpec extends TestKit(ActorSystem("TimedAssertionsSpec"))
       }
     }
 
-    "reply with valid work in reasonable timeframe" in {
+    "reply with valid work in reasonable timeframe" in
+      {
       workerActor ! "worksequence"
 
       val results:Seq[Int] = receiveWhile[Int](max= 2 seconds, idle= 500 millis, messages= 10) {
@@ -38,6 +41,16 @@ class TimedAssertionsSpec extends TestKit(ActorSystem("TimedAssertionsSpec"))
       }
 
       assert(results.sum > 5)
+    }
+
+    "reply to test probe in timely manner" in {
+      within(1 second) {
+        val probe = TestProbe()
+        // probe has its own timeout of 0.3 sec from specialTimedAssertionsConfig.akka.test.single-expect-default
+        // and is not influenced by within's 1 second. Hence would fail
+        probe.send(workerActor, "work")
+        probe.expectMsg(WorkResult(42))
+      }
     }
   }
 
