@@ -1,25 +1,26 @@
 package com.cypherlabs.akka.actors
 
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
-import akka.event.Logging
 
 object ActorLoggingDemo extends App{
 
   class ActorWithExplicitLogger extends Actor {
-    val logger = Logging(context.system, this)
+    //val logger = Logging(context.system, this)
     override def receive: Receive = {
-      case message => logger.info(message.toString)
+      case message => //logger.info(message.toString)
     }
   }
 
   val actorSystem = ActorSystem("LoggingDemo")
+  println(actorSystem)
   val actor = actorSystem.actorOf(Props[ActorWithExplicitLogger])
+  println(actor)
   actor ! "Logging a simple message"
 
   class ActorWithInbuiltLogging extends Actor with ActorLogging {
     override def receive: Receive = {
       case message: String => log.info(message)
-      case (a, b) => log.info("Two inputs are: {} and {}", a, b)
+      case (a, b) => println(s"Two inputs are: $a and $b") //log.info("Two inputs are: {} and {}", a, b)
     }
   }
 
